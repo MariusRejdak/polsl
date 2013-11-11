@@ -5,7 +5,7 @@
 
 Running:
 #!/bin/fish
-g++ -Wall -std=c++11 -o3 -o file1 zad1.cpp; and ./zad1
+g++ -Wall -std=c++11 -o3 -o zad1 zad1.cpp; and ./zad1
 
 Output:
 English to std::set 0.080332s
