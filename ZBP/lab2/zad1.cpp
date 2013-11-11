@@ -42,8 +42,6 @@ Polish searching in std::unordered_set for ratio 1 0.429663s
 #include <set>			// std::set
 #include <unordered_set> // std::unordered_set
 
-//using namespace std; // http://stackoverflow.com/questions/1452721/why-is-using-namespace-std-considered-bad-practice
-
 template <class AssocContainer, class ForwardIterator>
 float insert_time(AssocContainer &container, ForwardIterator iter_begin, ForwardIterator iter_end)
 {

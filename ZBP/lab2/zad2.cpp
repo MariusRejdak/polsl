@@ -126,6 +126,8 @@ std::string print_with_context(std::vector<std::string>::iterator error, std::ve
 
 int main(int argc, char *argv[])
 {
+	if(argc < 2)
+		return 1;
 	std::ifstream in_file(argv[1], std::ifstream::in);
 	std::istream_iterator<std::string> in_iter_file(in_file), in_iter_eof;
 	std::unordered_set<std::string> uset_words(in_iter_file, in_iter_eof);
