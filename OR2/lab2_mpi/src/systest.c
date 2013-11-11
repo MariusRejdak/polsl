@@ -1,6 +1,11 @@
 // Marius Rejdak
 // Informatyka, mgr, OS1
 
+/*
+Data wykonania ćwiczenia: 2013-11-06
+Treść zadania: Napisać własne MPI_Bcast i MPI_Reduce, oraz użyć obydwu
+*/
+
 #include "mpi.h"
 #include <stdio.h>
 
@@ -10,8 +15,6 @@ void MPI_Bcast_custom(void *buffer, int count, MPI_Datatype datatype, int root, 
 	MPI_Status status;
 	MPI_Comm_rank(MPI_COMM_WORLD, &me);
 	MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
-
-	//printf("Bcast called from %d\n", me);
 
 	if(root == me) 
 	{
@@ -35,8 +38,6 @@ void MPI_Reduce_sum_ints(int *send, int *recv, int root, MPI_Comm comm)
 	MPI_Status status;
 	MPI_Comm_rank(MPI_COMM_WORLD, &me);
 	MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
-
-	//printf("Reduce called from %d\n", me);
 
 	if(root == me) 
 	{
@@ -70,7 +71,7 @@ int main(int argc, char *argv[])
 		{
 			printf("Enter number (zero exits): ");
 			fflush(stdout);
-			scanf("%d", &test); //don't work with _MPI_ROOT != 0
+			scanf("%d", &test);
 		}
 
 		MPI_Bcast_custom(&test, 1, MPI_INT, _MPI_ROOT, MPI_COMM_WORLD);
