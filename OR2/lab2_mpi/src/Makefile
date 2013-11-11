@@ -1,12 +1,12 @@
-CC        = /usr/lib/openmpi/bin/mpicc
+CC		= mpicc
 CLINKER   = $(CC)
 OPTFLAGS  = -O
-HFILES    = 
-SOURCE    = cpi.c
-OBJS      = $(SOURCE:.c=.o)
-NAME      = cpi.exe
+HFILES	= 
+SOURCE	= systest.c
+OBJS	  = $(SOURCE:.c=.o)
+NAME	  = systest
 
-CFLAGS	  = $(OPTFLAGS)
+CFLAGS	  = $(OPTFLAGS) -std=c99
 
 $(NAME): $(OBJS) $(HFILES)
 	$(CLINKER) $(OPTFLAGS) -o$(NAME) $(OBJS) -lm 
@@ -14,5 +14,4 @@ $(NAME): $(OBJS) $(HFILES)
 .c.o:
 	$(CC) $(CFLAGS) -c $*.c
 run:
-	/usr/lib/openmpi/bin/mpirun -n 8 $(NAME)
-
+	mpirun -n 8 $(NAME)
