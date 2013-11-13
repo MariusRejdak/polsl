@@ -4,7 +4,7 @@ OPTFLAGS  = -O
 HFILES	= 
 SOURCE	= systest.c
 OBJS	  = $(SOURCE:.c=.o)
-NAME	  = systest
+NAME	  = systest.out
 
 CFLAGS	  = $(OPTFLAGS) -std=c99
 

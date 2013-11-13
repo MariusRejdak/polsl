@@ -9,7 +9,7 @@ Data wykonania ćwiczenia: 2013-11-13
 #include <stdio.h>
 
 #define _MPI_ROOT 0
-#define _T_ 1
+#define _T_ 2
 
 int main(int argc, char *argv[])
 {
@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
 	{
 		MPI_Status status;
 		float temp_p = 0, temp_n = 0;
-		
+
 		MPI_Send(&temp, 1, MPI_FLOAT, (me-1)%8, 0, MPI_COMM_WORLD);
 		MPI_Send(&temp, 1, MPI_FLOAT, (me+1)%8, 0, MPI_COMM_WORLD);
 		MPI_Recv(&temp_p, 1, MPI_FLOAT, (me-1)%8, 0, MPI_COMM_WORLD, &status);
