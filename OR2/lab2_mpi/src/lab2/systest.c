@@ -9,18 +9,27 @@ Data wykonania ćwiczenia: 2013-11-13
 #include <stdio.h>
 
 #define _MPI_ROOT 0
-#define _T_ 2
+#define _T_ 100
 
 int main(int argc, char *argv[])
 {
 	unsigned int me, size;
-	float tab[8] = {1.0, 1.1, 1.2, 1.3, 10.4, 1.5, 1.6, 1.7}, temp = 0;
+	float tab[8], temp = 0;
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &me);
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-	MPI_Scatter(tab, 1, MPI_FLOAT, &temp, 1, MPI_FLOAT, _MPI_ROOT, MPI_COMM_WORLD);
+	if(me == _MPI_ROOT)
+	{
+		printf("Enter 8 floats:\n");
+		for(int i = 0; i < 8; ++i)
+		{
+			fflush(stdout);
+			scanf("%f", tab+i);
+		}
+	}
 
+	MPI_Scatter(tab, 1, MPI_FLOAT, &temp, 1, MPI_FLOAT, _MPI_ROOT, MPI_COMM_WORLD);
 	for(int i = 0; i < _T_; ++i)
 	{
 		MPI_Status status;
@@ -33,11 +42,11 @@ int main(int argc, char *argv[])
 
 		temp = (temp*2.f + temp_p + temp_n) / 4.f;
 	}
-
     MPI_Gather(&temp, 1, MPI_FLOAT, tab, 1, MPI_FLOAT, _MPI_ROOT, MPI_COMM_WORLD);
 
     if(me == _MPI_ROOT)
 	{
+		printf("Results:\n");
 		for(int i = 0; i < 8; ++i)
 		{
 			printf("%f\n", tab[i]);
