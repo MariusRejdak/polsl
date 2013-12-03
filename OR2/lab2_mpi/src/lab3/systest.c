@@ -12,18 +12,19 @@ Data wykonania ćwiczenia: 2013-11-20
 #include <string.h>
 #include <time.h>
 
-#define KLIENT 0
-#define ZAKLAD_A 1
-#define ZAKLAD_B 2
-#define ZAKLAD_C 3
+#define ZAKLAD_A 0
+#define ZAKLAD_B 1
+#define ZAKLAD_C 2
 
-#define MACIERZ_SRC 1
-#define MACIERZ_RZW 2
-#define PROBLEM_SRC 3
-#define PROBLEM_RZW 4
+//Tags
 #define END_PROGRAM 0
-
-#define TAG(zaklad,problem) zaklad*10+problem
+#define GET_MATRIX 1
+#define MATRIX_SIZE 2
+#define MATRIX_VALUES 3
+#define MATRIX_SOL 4
+#define PROBLEM_REQ 5
+#define PROBLEM_VALUES 6
+#define PROBLEM_SOL 7
 
 //Limit wykonanych działań
 #define ILOSC_MACIERZY 100
@@ -39,6 +40,30 @@ Data wykonania ćwiczenia: 2013-11-20
 #define ROZW_PROB_INFOR 100
 
 enum Problem {NONE = 0, REKRUTACJA, SPOR_PRAWNY, INFORM};
+
+struct Zaklad
+{
+	int typ;
+	enum Problem problem;
+	bool problemSend;
+	int problemSendFrom;
+	int sendMatrixSize;
+};
+
+void getMatrix(int *size, double **values)
+{
+	if(*size == 0)
+	{
+		*size = rand()%100 + 1;
+	}
+	
+	*values = malloc((*size) * (*size) * sizeof(double));
+
+	for(int i = 0; i < size*size; ++i)
+    {
+    	values[i] = rand()%1000;
+    }
+}
 
 bool getProblem(enum Problem *p)
 {
@@ -65,7 +90,7 @@ bool getProblem(enum Problem *p)
 	}
 }
 
-int getProblemSize(enum Problem *p)
+inline int getProblemSize(enum Problem *p)
 {
 	switch(*p)
 	{
@@ -97,37 +122,9 @@ double solveProblem(int size, double values[])
     return MPI_Wtime()-start_time;
 }
 
-double waitForSolution(enum Problem *p, double values[])
+inline int zakladNr(int me)
 {
-	MPI_Status status;
-
-	switch(*p)
-	{
-		case REKRUTACJA:
-		MPI_Send(p, getProblemSize(p), MPI_CHAR, ZAKLAD_A, TAG_PROBLEM, MPI_COMM_WORLD);
-		MPI_Recv(p, sizeof(enum Problem), MPI_CHAR, ZAKLAD_A, TAG_SOLUTION, MPI_COMM_WORLD, &status);
-		break;
-
-		case SPOR_PRAWNY:
-		MPI_Send(p, sizeof(enum Problem), MPI_CHAR, ZAKLAD_B, TAG_PROBLEM, MPI_COMM_WORLD);
-		MPI_Recv(p, sizeof(enum Problem), MPI_CHAR, ZAKLAD_B, TAG_SOLUTION, MPI_COMM_WORLD, &status);
-		break;
-
-		case INFORM:
-		MPI_Send(p, sizeof(enum Problem), MPI_CHAR, ZAKLAD_C, TAG_PROBLEM, MPI_COMM_WORLD);
-		MPI_Recv(p, sizeof(enum Problem), MPI_CHAR, ZAKLAD_C, TAG_SOLUTION, MPI_COMM_WORLD, &status);
-		break;
-
-		default:
-		break;
-	}
-
-	return 1.;
-}
-
-double doRegularWork()
-{
-	return 1.;
+	return me-1 % 3;
 }
 
 void process_zaklad(int me, short typ_zakladu, double *times)
@@ -169,35 +166,152 @@ void process_zaklad(int me, short typ_zakladu, double *times)
 
 	MPI_Send(0, 0, MPI_INT, ZAKLAD_B, TAG_FINISHED, MPI_COMM_WORLD);
 	MPI_Send(0, 0, MPI_INT, ZAKLAD_C, TAG_FINISHED, MPI_COMM_WORLD);
-}*/
+}
+
+void proces_klient(int me, int *send_matrixes, int *got_solved)
+{
+	int mpi_size;
+	MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+	struct Zaklad zaklady[mpi_size];
+
+	for(int i = 1; i < mpi_size; ++i)
+	{
+		zaklady[i].typ = zakladNr(me);
+		zaklady[i].problem = NONE;
+		zaklady[i].problemSend = false;
+		zaklady[i].problemSendFrom = 0;
+		zaklady[i].sendMatrixSize = 0;
+	}
+
+	while(true)
+	{
+		MPI_Status status, status_tmp;
+
+		MPI_probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+		if(status.MPI_TAG == GET_MATRIX)
+		{
+			int source = status.MPI_SOURCE;
+			int size = 0;
+			double *values;
+			enum Problem canSolve = NONE;
+
+			MPI_Recv(0, 0, MPI_CHAR, source, GET_MATRIX, MPI_COMM_WORLD, &status_tmp);
+
+			switch(zakladNr(source))
+			{
+				case ZAKLAD_A:
+				canSolve = REKRUTACJA;
+				break;
+
+				case ZAKLAD_B:
+				canSolve = SPOR_PRAWNY;
+				break;
+
+				case ZAKLAD_C:
+				canSolve = INFORM;
+				break;
+
+				default:
+				break;
+			}
+
+			for(int i = 1; i < mpi_size; ++i)
+			{
+				if(i != source && zaklady[i].problem == canSolve)
+				{
+					
+				}
+			}
+
+			getMatrix(&size, &values);
+			zaklady[source].sendMatrixSize = size;
+			zaklady[source].problemSendFrom = 0;
+			MPI_Send(&size, 1, MPI_INT, source, MATRIX_SIZE, MPI_COMM_WORLD);
+			MPI_Send(values, size*size, MPI_DOUBLE, source, MATRIX_VALUES, MPI_COMM_WORLD);
+			send_matrixes++;
+
+			free(values);
+		}
+		else if(status.MPI_TAG == MATRIX_SOL)
+		{
+			int source = status.MPI_SOURCE;
+			int size = zaklady[source].sendMatrixSize;
+			double *values = malloc(size*size*sizeof(double));
+
+			MPI_Recv(values, size*size, MPI_DOUBLE, source, MATRIX_SOL, MPI_COMM_WORLD, &status_tmp);
+
+			got_solved++;
+
+			free(values);
+		}
+		else if(status.MPI_TAG == PROBLEM_REQ)
+		{
+			int source = status.MPI_SOURCE;
+			enum Problem p = NONE;
+
+			MPI_Recv(&p, sizeof(enum Problem), MPI_CHAR, source, PROBLEM_REQ, MPI_COMM_WORLD, &status_tmp);
+			zaklady[source].problem = p;
+		}
+		else if(status.MPI_TAG == PROBLEM_SOL)
+		{
+			int source = status.MPI_SOURCE;
+			int size = zaklady[source].sendMatrixSize;
+			double *values = malloc(size*size*sizeof(double));
+
+			MPI_Recv(values, size*size, MPI_DOUBLE, source, MATRIX_SOL, MPI_COMM_WORLD, &status_tmp);
+			MPI_Send(values, size*size, MPI_DOUBLE, zaklady[source].problemSendFrom, MATRIX_SOL, MPI_COMM_WORLD);
+
+			zaklady[source].problemSendFrom = 0;
+			free(values);
+		}
+		else if(status.MPI_TAG == END_PROGRAM)
+		{
+			int source = status.MPI_SOURCE;
+
+			MPI_Recv(0, 0, MPI_CHAR, source, END_PROGRAM, MPI_COMM_WORLD, &status_tmp);
+			for(int i = 1; i < mpi_size; ++i)
+			{
+				if(i != source)
+					MPI_Send(0, 0, MPI_CHAR, i, END_PROGRAM, MPI_COMM_WORLD);
+			}
+			break;
+		}
+	}
+}
 
 int main(int argc, char *argv[])
 {
 	int me;
 	double times[4] = {0.};
+	int send_matrixes = 0, got_solved = 0;
 	
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &me);
-	//MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-	srand(time(0)+me);
+	srand(time(0)+me); //so random
 
-	switch(me)
-	{
-		case ZAKLAD_A:
-		//process_ZA(me, times);
-		break;
-		case ZAKLAD_B:
-		//process_ZB(me, times);
-		break;
-		case ZAKLAD_C:
-		//process_ZC(me, times);
-		break;
-		default:
-		break;
-	}
+	if(me == 0)
+		proces_klient(me, &send_matrixes, &got_solved);
+	else
+		switch(zakladNr(me))
+		{
+			case ZAKLAD_A:
+			//proces_ZA(me, times);
+			break;
+			case ZAKLAD_B:
+			//proces_ZB(me, times);
+			break;
+			case ZAKLAD_C:
+			//proces_ZC(me, times);
+			break;
+			default:
+			break;
+		}
 
-	printf("%d: %lf %lf %lf %lf\n", me, times[0], times[1], times[2], times[3]);
+	if(me != 0)
+		printf("Zakład %d: %lf %lf %lf %lf\n", zakladNr(me), times[0], times[1], times[2], times[3]);
+	else
+		printf("Klient: wysłano %d macierzy\n", send_matrixes);
 
 	MPI_Finalize();
 }  
