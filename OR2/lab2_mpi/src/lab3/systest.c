@@ -2,7 +2,8 @@
 // Informatyka, mgr, OS1
 
 /*
-Data wykonania ćwiczenia: 2013-11-20
+Symulacja firmy Macierz - komunikacja niesynchroniczna w MPI
+Data wykonania ćwiczenia: 2013-11-27
 */
 
 #include "mpi.h"
@@ -87,11 +88,11 @@ enum Problem getProblem()
 	{
 		return SPOR_PRAWNY;
 	}
-	else if(s+1 % PORTZ_REKRUTACJA == 0)
+	else if((s+1) % PORTZ_REKRUTACJA == 0)
 	{
 		return REKRUTACJA;
 	}
-	else if(s+2 % PORTZ_INFOR == 0)
+	else if((s+2) % PORTZ_INFOR == 0)
 	{
 		return INFORM;
 	}
@@ -119,7 +120,7 @@ double solveProblem(int size, double *values)
 
 inline int zakladNr(int me)
 {
-	return me-1 % 3;
+	return (me-1) % 3;
 }
 
 enum Problem rozwiazuje(int zaklad)
@@ -171,66 +172,100 @@ void proces_zaklad(int me, int typ_zakladu, double *times)
 	int matrixes_solved = 0;
 	enum Problem rozwiazujeP = rozwiazuje(typ_zakladu);
 
-	while(matrixes_solved < 100)
+	while(matrixes_solved < 10000)
 	{
 		MPI_Status status, status_tmp;
-		int tag, source;
+		int tag, source, flag = 0;
 
-		MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-		source = status.MPI_SOURCE;
-		tag = status.MPI_TAG;
-		if(tag == END_PROGRAM)
+		MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status);
+		if(flag)
 		{
-			MPI_Recv(0, 0, MPI_CHAR, source, tag, MPI_COMM_WORLD, &status_tmp);
-			return;
+			source = status.MPI_SOURCE;
+			tag = status.MPI_TAG;
+			if(tag == END_PROGRAM)
+			{
+				MPI_Recv(0, 0, MPI_CHAR, source, tag, MPI_COMM_WORLD, &status_tmp);
+				return;
+			}
+			else if(tag == MESSAGE)
+			{
+				struct Message m;
+				MPI_Recv(&m, sizeof(struct Message), MPI_CHAR, source, tag, MPI_COMM_WORLD, &status_tmp);
+
+				if(m.problemType == NONE)
+				{
+					double *values = NULL;
+					int size = m.matrixSize;
+					getMatrix(size, &values);
+					*timeWork += solveProblem(size, values);
+					free(values);
+
+					matrixes_solved++;
+
+					enum Problem p = getProblem();
+					switch(p)
+					{
+						case REKRUTACJA:
+						problemRekrutacja = true;
+						break;
+
+						case SPOR_PRAWNY:
+						problemSporPrawny = true;
+						break;
+
+						case INFORM:
+						problemInform = true;
+						break;
+					}
+
+					if(p != NONE)
+					{
+						struct Message mx;
+						mx.matrixSize = getProblemSize(p);
+						mx.problemType = p;
+						mx.problemSource = me;
+						MPI_Send(&mx, sizeof(struct Message), MPI_CHAR, 0, MESSAGE, MPI_COMM_WORLD);
+					}
+					
+				}
+				else if(m.problemType == rozwiazujeP)
+				{
+					double *values = NULL;
+					int size = m.matrixSize;
+					getMatrix(size, &values);
+					*timeProblems += solveProblem(size, values);
+					free(values);
+
+					MPI_Send(&m, sizeof(struct Message), MPI_CHAR, 0, PROBLEM_SOL, MPI_COMM_WORLD);
+					MPI_Send(&m, sizeof(struct Message), MPI_CHAR, m.problemSource, PROBLEM_SOL, MPI_COMM_WORLD);
+				}
+			}
+			else if(tag == PROBLEM_SOL)
+			{
+				struct Message m;
+				MPI_Recv(&m, sizeof(struct Message), MPI_CHAR, source, tag, MPI_COMM_WORLD, &status_tmp);
+
+				switch(m.problemType)
+				{
+					case REKRUTACJA:
+					problemRekrutacja = false;
+					break;
+
+					case SPOR_PRAWNY:
+					problemSporPrawny = false;
+					break;
+
+					case INFORM:
+					problemInform = false;
+					break;
+				}
+			}
 		}
-		else if(tag == MESSAGE)
+		else
 		{
 			struct Message m;
-			MPI_Recv(&m, sizeof(struct Message), MPI_CHAR, source, tag, MPI_COMM_WORLD, &status_tmp);
-
-			if(m.problemType == NONE)
-			{
-				double *values = NULL;
-				int size = m.matrixSize;
-				getMatrix(size, &values);
-				*timeWork = solveProblem(size, values);
-				free(values);
-
-				printf("solved\n");
-				matrixes_solved++;
-			}
-			else if(m.problemType == rozwiazujeP)
-			{
-				double *values = NULL;
-				int size = m.matrixSize;
-				getMatrix(size, &values);
-				*timeProblems = solveProblem(size, values);
-				free(values);
-
-				MPI_Send(&m, sizeof(struct Message), MPI_CHAR, 0, MESSAGE, MPI_COMM_WORLD);
-				MPI_Send(&m, sizeof(struct Message), MPI_CHAR, m.problemSource, MESSAGE, MPI_COMM_WORLD);
-			}
-		}
-		else if(tag == PROBLEM_SOL)
-		{
-			struct Message m;
-			MPI_Recv(&m, sizeof(struct Message), MPI_CHAR, source, tag, MPI_COMM_WORLD, &status_tmp);
-
-			switch(m.problemType)
-			{
-				case REKRUTACJA:
-				problemRekrutacja = false;
-				break;
-
-				case SPOR_PRAWNY:
-				problemSporPrawny = false;
-				break;
-
-				case INFORM:
-				problemInform = false;
-				break;
-			}
+			m.problemType = NONE;
+			MPI_Send(&m, sizeof(struct Message), MPI_CHAR, 0, MESSAGE, MPI_COMM_WORLD);
 		}
 	}
 
@@ -267,6 +302,18 @@ void proces_klient(int me, int mpi_size, int *send_matrixes)
 					MPI_Send(0, 0, MPI_CHAR, i, END_PROGRAM, MPI_COMM_WORLD);
 				}
 			}
+
+			int flag = 0;
+			do
+			{
+				MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status_tmp);
+				if(flag)
+				{
+					struct Message m;
+					MPI_Recv(&m, sizeof(struct Message), MPI_CHAR, status_tmp.MPI_SOURCE, status_tmp.MPI_TAG, MPI_COMM_WORLD, &status_tmp);
+				}
+			} while(flag);
+
 			return;
 		}
 		else if(tag == MESSAGE)
@@ -293,7 +340,7 @@ void proces_klient(int me, int mpi_size, int *send_matrixes)
 				}
 
 				MPI_Send(&m, sizeof(struct Message), MPI_CHAR, source, MESSAGE, MPI_COMM_WORLD);
-				send_matrixes++;
+				(*send_matrixes)++;
 			}
 			else
 			{
@@ -351,7 +398,7 @@ int main(int argc, char *argv[])
 	if(me != 0)
 	{
 		proces_zaklad(me, zakladNr(me), times);
-		printf("Zakład %d: %lf %lf %lf %lf\n", zakladNr(me), times[0], times[1], times[2], times[3]);
+		printf("Zakład %d: rozwiązywano macierze %lfs, rozwiązywano problemy %lfs\n", zakladNr(me), times[0], times[1]);
 	}
 	else
 	{
