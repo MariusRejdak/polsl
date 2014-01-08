@@ -8,33 +8,18 @@
 #include <unistd.h>
 #include <time.h>
 
+#include "utils.h"
+
 #define TAB_SIZE_S 100
 #define TAB_SIZE_T 100
 #define _N 10
-#define BUFSIZE (sizeof(int) * (_N+1))
+#define BUFSIZE (sizeof(int)*(_N+1))
+
 
 typedef struct {
     long typ;
     int liczby[_N+1];
 } msgbufor;
-
-void gen_rands(int *tab, size_t size)
-{
-    for(size_t i = 0; i < size; ++i)
-    {
-        tab[i] = rand()%1000;
-    }
-}
-
-int compare_a(const void *a, const void *b)
-{
-    return *(int*)b - *(int*)a;
-}
-
-int compare_b(const void *a, const void *b)
-{
-    return *(int*)a - *(int*)b;
-}
 
 // Zadanie:
 // Wszystkie elementy zbioru S mają być mniejsze od elementów zbioru T
@@ -127,7 +112,7 @@ int main(int argc, const char* argv[])
                 t_tab[i] = bufor.liczby[i+1];
             }
 
-            qsort(t_tab, TAB_SIZE_T, sizeof(int), compare_b);
+            qsort(t_tab, TAB_SIZE_T+_N, sizeof(int), compare_b);
 
             bufor.typ = 2L;
             for(int i = 0; i < _N; ++i)
@@ -139,7 +124,6 @@ int main(int argc, const char* argv[])
         //printf("Finished B\n"); fflush(stdout);
 
         FILE *fp = fopen("b.txt", "w");
-        fprintf (fp, "Zbiór T\n");
         for(int i = _N; i < TAB_SIZE_T+_N; ++i)
             fprintf (fp, "%d ", t_tab[i]);
         fprintf (fp, "\n");
