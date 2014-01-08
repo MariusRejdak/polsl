@@ -1,3 +1,11 @@
+// Marius Rejdak
+// Informatyka, mgr, OS1
+
+/*
+Zadanie 11, Unix
+Data wykonania ćwiczenia: 2014-01-08
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>

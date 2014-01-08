@@ -18,8 +18,3 @@ int xdr_intarray(XDR *xdrsp, msgbufor *data)
 {
 	return xdr_vector(xdrsp, (char*)data->liczby, 10, sizeof(int), (xdrproc_t)xdr_int);
 }
-
-int xdr_number(XDR *xdrsp, int *number)
-{
-	return xdr_int(xdrsp, number);
-}

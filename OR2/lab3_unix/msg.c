@@ -1,3 +1,11 @@
+// Marius Rejdak
+// Informatyka, mgr, OS1
+
+/*
+Zadanie 11, Unix
+Data wykonania ćwiczenia: 2014-01-08
+*/
+
 #include <sys/types.h>
 #include <assert.h>
 #include <stdio.h>
