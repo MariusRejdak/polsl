@@ -1,0 +1,10 @@
+#ifndef BOOSTGRAPHWRAPPER_H_INCLUDED
+#define BOOSTGRAPHWRAPPER_H_INCLUDED
+
+class BoostGraphWrapper {
+public:
+    
+
+};
+
+#endif // BOOSTGRAPHWRAPPER_H_INCLUDED
