@@ -12,7 +12,7 @@
 class BoostGraphWrapper {
 public:
     BoostGraphWrapper(int *matrix, size_t size);
-    BoostGraphWrapper(std::vector<std::vector<int> > matrix);
+    BoostGraphWrapper(std::vector<std::vector<int> > &matrix);
     std::vector<int> dijkstra(int start_vertex);
     std::vector<std::vector<int> > floyd_warshall();
     std::vector<int> bfs(int start_vertex);

@@ -5,8 +5,9 @@
 #include <iostream>
 #include <queue>
 #include <functional>
+#include <algorithm>
 
-Graph::Graph(const int *matrix, size_t size) : matrix(std::vector<std::vector<int> >(m_size, std::vector<int>(m_size))), m_size(size)
+Graph::Graph(const int *matrix, size_t size) : matrix(std::vector<std::vector<int> >(size, std::vector<int>(size))), m_size(size)
 {
 	for (size_t i = 0; i < m_size; ++i)
 	{
@@ -25,26 +26,28 @@ Graph::Graph(const std::vector<std::vector<int> > &matrix) : matrix(matrix), m_s
 std::vector<int> Graph::dijkstra(unsigned int start_vertex)
 {
 	std::vector<int> d(m_size, -1);
-	auto Q_comp = [&](const int& lhs, const int&rhs) -> bool
+	auto Q_comp = [&](const int &lhs, const int &rhs) -> bool
 	{
-		if (d[lhs] != -1 && d[rhs] != -1)
-			return d[lhs] > d[rhs];
-		else if(d[lhs] != -1)
+		if ((d[lhs] != -1) && (d[rhs] != -1))
+			return (d[lhs] > d[rhs]);
+		else if(d[lhs] == -1)
 			return true;
 		else
 			return false;
 	};
-	std::priority_queue<int, std::vector<int>, decltype(Q_comp)> Q(Q_comp);
+	std::vector<int> Q;
 
 	for (size_t i = 0; i < m_size; ++i)
-		Q.push(i);
+		Q.push_back(i);
 
 	d[start_vertex] = 0;
 
 	while(!Q.empty())
 	{
-		int u = Q.top();
-		Q.pop();
+		std::sort(Q.begin(), Q.end(), Q_comp);
+		int u = Q.back();
+		Q.pop_back();
+
 		for (size_t v = 0; v < m_size; ++v)
 		{
 			if(matrix[u][v] != -1)

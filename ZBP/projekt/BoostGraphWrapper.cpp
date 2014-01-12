@@ -25,7 +25,6 @@ public:
     template <typename Vertex, typename Graph>
     void finish_vertex(Vertex u, const Graph &g)
     {
-        std::cout << u << " " << counter << std::endl;
         put(d, u, counter++);
     }
 
@@ -47,7 +46,6 @@ public:
     template <typename Vertex, typename Graph>
     void finish_vertex(Vertex u, const Graph &g)
     {
-        std::cout << u << " " << counter << std::endl;
         put(d, u, counter++);
     }
 
