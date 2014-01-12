@@ -71,7 +71,7 @@ BoostGraphWrapper::BoostGraphWrapper(int *matrix, size_t size) : g(size)
     }
 }
 
-BoostGraphWrapper::BoostGraphWrapper(std::vector<std::vector<int> > matrix) : g(matrix.size())
+BoostGraphWrapper::BoostGraphWrapper(std::vector<std::vector<int> > &matrix) : g(matrix.size())
 {
     vertex_iterator vi, vj, vend;
     tie(vi, vend) = vertices(g);
@@ -96,7 +96,7 @@ std::vector<int> BoostGraphWrapper::dijkstra(int start_vertex)
 
     vertex_iterator vi, vend;
     for (tie(vi, vend) = vertices(g); vi != vend; ++vi) {
-        output[*vi] = d[*vi];
+        output[*vi] = d[*vi] == INT_MAX ? -1 : d[*vi];
     }
 
     return output;
@@ -114,7 +114,7 @@ std::vector<std::vector<int> > BoostGraphWrapper::floyd_warshall()
     for (tie(vi, vend) = vertices(g); vi != vend; ++vi)
     {
         for (tie(vj, vend) = vertices(g); vj != vend; ++vj) {
-            output[*vi][*vj] = dm[*vi][*vj];
+            output[*vi][*vj] = dm[*vi][*vj] == INT_MAX ? -1 : dm[*vi][*vj];
         }
     }
 
