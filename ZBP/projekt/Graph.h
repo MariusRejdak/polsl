@@ -15,28 +15,6 @@ public:
 private:
 	std::vector<std::vector<int> > matrix;
 	size_t m_size;
-
-	class Diskstra_cmp
-	{
-	public:
-		Diskstra_cmp(std::vector<int> &d) : d(d)
-		{
-			//Empty
-		}
-
-		bool operator() (const int& lhs, const int&rhs) const
-		{
-			if (d[lhs] != -1 && d[rhs] != -1)
-				return d[lhs] > d[rhs];
-			else if(d[lhs] != -1)
-				return true;
-			else
-				return false;
-		}
-	private:
-		std::vector<int> &d;
-	};
-
 };
 
 #endif // GRAPH_H_INCLUDED
