@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=-std=c++11 -Wall -W -g
+CFLAGS=-std=c++11 -Wall -W -O3
 LIBS_M=Graph.cpp BoostGraphWrapper.cpp main.cpp
 LIBS_T=Graph.cpp BoostGraphWrapper.cpp test.cpp
 OBJECTS_M=$(LIBS_M:.cpp=.o)
