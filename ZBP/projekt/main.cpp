@@ -18,7 +18,7 @@ int main()
 
     Graph g(N);
     //EdgeWeightProperty w = 1;
-    //add_edge(B, C, 3, g);
+    //add_edge(B, C, g);
     //add_edge(C, A, 4, g);
     //add_edge(B, A, 8, g);
 
