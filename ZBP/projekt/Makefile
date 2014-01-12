@@ -1,19 +1,22 @@
 CC=g++
 CFLAGS=-std=c++11 -Wall -W -g
-SOURCES=main.cpp Graph.cpp BoostGraphWrapper.cpp
-OBJECTS=$(SOURCES:.cpp=.o)
-EXECUTABLE=main.out
+LIBS_M=Graph.cpp BoostGraphWrapper.cpp main.cpp
+LIBS_T=Graph.cpp BoostGraphWrapper.cpp test.cpp
+OBJECTS_M=$(LIBS_M:.cpp=.o)
+OBJECTS_T=$(LIBS_T:.cpp=.o)
 
-all: $(SOURCES) $(EXECUTABLE)
+all: $(LIBS_M) main.out test.out
 
-$(EXECUTABLE): $(OBJECTS) 
-    $(CC) $(CFLAGS) $(OBJECTS) -o $@
+test: $(LIBS_T) test.out
+
+main.out: $(OBJECTS_M) 
+	$(CC) $(CFLAGS) $(OBJECTS_M) -o $@
+
+test.out: $(OBJECTS_T) 
+	$(CC) $(CFLAGS) $(OBJECTS_T) -o $@
 
 .cpp.o:
-    $(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-    rm -rf *.o *.out
-
-run:
-    ./main.out
+	rm -rf *.o *.out
