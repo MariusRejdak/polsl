@@ -18,7 +18,7 @@ int main()
 	Graph g(matrix, 5);
 	BoostGraphWrapper bg(matrix, 5);
 
-	/*for (int j = 0; j < 5; ++j)
+	for (int j = 0; j < 5; ++j)
 	{
 		std::cout << "For " << j << "\n";
 		auto d1 = g.dijkstra(j);
@@ -35,7 +35,7 @@ int main()
 			std::cout << *i << " ";
 		}
 		std::cout << "\n";
-	}*/
+	}
 
 	/*{
 		auto d1 = g.floyd_warshall();
