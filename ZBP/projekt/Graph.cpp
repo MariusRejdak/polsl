@@ -187,5 +187,29 @@ std::vector<int> Graph::dfs(unsigned int start_vertex)
 
 std::vector<int> Graph::topological_sort()
 {
-	std::vector<int> output(m_size);
+	std::vector<short> visited(m_size, 0);
+	std::vector<int> l;
+
+	std::function<void(unsigned u)> dfs_visit = [&](unsigned int u)
+	{
+		visited[u] = 1;
+		for(size_t v = 0; v < m_size; ++v)
+		{
+			if((matrix[u][v] != -1) && (u != v) && (visited[v] == 0))
+			{
+				dfs_visit(v);
+			}
+		}
+		visited[u] = 2;
+		l.push_back(u);
+	};
+
+	for(size_t v = 0; v < m_size; ++v)
+	{
+		if(visited[v] == 0)
+			dfs_visit(v);
+	}
+
+	std::reverse(l.begin(), l.end());
+	return l;
 }

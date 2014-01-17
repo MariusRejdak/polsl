@@ -12,6 +12,7 @@
 #include <boost/graph/depth_first_search.hpp>
 #include <boost/graph/topological_sort.hpp>
 #include <boost/graph/graphviz.hpp>
+#include <boost/graph/copy.hpp>
 
 using namespace boost;
 
