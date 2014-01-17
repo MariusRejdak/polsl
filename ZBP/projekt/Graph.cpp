@@ -71,7 +71,7 @@ std::vector<std::vector<int> > Graph::floyd_warshall()
 {
 	std::vector<std::vector<int> > d = matrix;
 
-	for (size_t i = 0; i != m_size; ++i)
+	for(size_t i = 0; i != m_size; ++i)
 		d[i][i] = 0;
 
 	for(size_t k = 0; k < m_size; ++k)
@@ -80,7 +80,7 @@ std::vector<std::vector<int> > Graph::floyd_warshall()
 		{
 			if(d[i][k] != -1)
 			{
-				for (size_t j = 0; j < m_size; ++j)
+				for(size_t j = 0; j < m_size; ++j)
 				{
 					if(d[i][j] != -1 && d[k][j] != -1)
 					{
@@ -97,6 +97,29 @@ std::vector<std::vector<int> > Graph::floyd_warshall()
 			}
 		}
 	}
+	return d;
+}
+
+std::vector<int> Graph::bellman_ford(int start_vertex)
+{
+	std::vector<int> d(m_size, -1);
+	d[start_vertex] = 0;
+
+	for(size_t i = 1; i < m_size; ++i)
+		for (size_t u = 0; u < m_size; ++u)
+		{
+			for (size_t v = 0; v < m_size; ++v)
+			{
+				if(matrix[u][v] != -1)
+				{
+					if(((d[v] > d[u] + matrix[u][v]) && (d[v] != -1) && (d[u] != -1))
+						|| ((d[v] == -1) && (d[u] != -1)))
+					{
+						d[v] = d[u] + matrix[u][v];
+					}
+				}
+			}
+		}
 	return d;
 }
 
@@ -160,4 +183,9 @@ std::vector<int> Graph::dfs(unsigned int start_vertex)
 	}
 
 	return output;
+}
+
+std::vector<int> Graph::topological_sort()
+{
+	std::vector<int> output(m_size);
 }

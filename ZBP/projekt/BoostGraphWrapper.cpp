@@ -2,12 +2,15 @@
 
 #include <vector>
 #include <iostream>
+#include <iterator>
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/dijkstra_shortest_paths.hpp>
 #include <boost/graph/floyd_warshall_shortest.hpp>
+#include <boost/graph/bellman_ford_shortest_paths.hpp>
 #include <boost/graph/breadth_first_search.hpp>
 #include <boost/graph/depth_first_search.hpp>
+#include <boost/graph/topological_sort.hpp>
 #include <boost/graph/graphviz.hpp>
 
 using namespace boost;
@@ -119,6 +122,19 @@ std::vector<std::vector<int> > BoostGraphWrapper::floyd_warshall()
     return output;
 }
 
+std::vector<int> BoostGraphWrapper::bellman_ford(int start_vertex)
+{
+    std::vector<int> dm(num_vertices(g), INT_MAX);
+    dm[start_vertex] = 0;
+
+    bellman_ford_shortest_paths(g, num_vertices(g), distance_map(&dm[0]));
+
+    for (auto i = dm.begin(); i != dm.end(); ++i)
+        *i = *i == INT_MAX ? -1 : *i;
+
+    return dm;
+}
+
 std::vector<int> BoostGraphWrapper::bfs(int start_vertex)
 {
     vertex_descriptor s = vertex(start_vertex, g);
@@ -140,6 +156,17 @@ std::vector<int> BoostGraphWrapper::dfs(int start_vertex)
     dfs_counter_visitor<counter_pm_type> vis(g, dcounter_pm);
     depth_first_search(g, root_vertex(s).visitor(vis));
     return counter;
+}
+
+std::vector<int> BoostGraphWrapper::topological_sort()
+{
+    std::vector<vertex_descriptor> c;
+    std::vector<int> out;
+    boost::topological_sort(g, std::back_inserter(c));
+
+    for (auto i = c.rbegin(); i != c.rend(); ++i)
+        out.push_back(*i);
+    return out;
 }
 
 void BoostGraphWrapper::print(std::ostream& o)

@@ -15,8 +15,10 @@ public:
 	BoostGraphWrapper(std::vector<std::vector<int> > &matrix);
 	std::vector<int> dijkstra(int start_vertex);
 	std::vector<std::vector<int> > floyd_warshall();
+	std::vector<int> bellman_ford(int start_vertex);
 	std::vector<int> bfs(int start_vertex);
 	std::vector<int> dfs(int start_vertex);
+	std::vector<int> topological_sort();
 	void print(std::ostream& o);
 private:
 	typedef boost::adjacency_list_traits<boost::vecS, boost::vecS, boost::directedS>::vertex_descriptor vertex_descriptor;
