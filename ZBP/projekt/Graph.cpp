@@ -213,3 +213,20 @@ std::vector<int> Graph::topological_sort()
 	std::reverse(l.begin(), l.end());
 	return l;
 }
+
+std::vector<std::pair<int, int> > Graph::kruskal()
+{
+	
+}
+
+void Graph::print(std::ostream& o)
+{
+	o << "digraph G {" << std::endl;
+	for (size_t v = 0; v < m_size; ++v)
+		o << v << ";" << std::endl;
+	for (size_t i = 0; i < m_size; ++i)
+		for (size_t j = 0; j < m_size; ++j)
+			if(i != j && matrix[i][j] != -1)
+				o << i << "->" << j << " ;" << std::endl;
+	o << "}" << std::endl;
+}

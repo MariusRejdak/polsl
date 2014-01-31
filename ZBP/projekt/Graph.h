@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <iostream>
+#include <utility>
 
 class Graph {
 public:
@@ -14,6 +15,8 @@ public:
 	std::vector<int> bfs(unsigned int start_vertex);
 	std::vector<int> dfs(unsigned int start_vertex);
 	std::vector<int> topological_sort();
+	std::vector<std::pair<int, int> > kruskal();
+	void print(std::ostream& o);
 private:
 	std::vector<std::vector<int> > matrix;
 	size_t m_size;

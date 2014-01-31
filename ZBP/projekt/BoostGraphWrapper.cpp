@@ -11,6 +11,7 @@
 #include <boost/graph/breadth_first_search.hpp>
 #include <boost/graph/depth_first_search.hpp>
 #include <boost/graph/topological_sort.hpp>
+#include <boost/graph/kruskal_min_spanning_tree.hpp>
 #include <boost/graph/graphviz.hpp>
 #include <boost/graph/copy.hpp>
 
@@ -167,6 +168,21 @@ std::vector<int> BoostGraphWrapper::topological_sort()
 
     for (auto i = c.rbegin(); i != c.rend(); ++i)
         out.push_back(*i);
+    return out;
+}
+
+std::vector<std::pair<int, int> > BoostGraphWrapper::kruskal()
+{
+    std::vector<std::pair<int, int> > out;
+    std::vector<edge_descriptor> spanning_tree;
+    kruskal_minimum_spanning_tree(g, std::back_inserter(spanning_tree));
+
+    edge_iterator eiter, eiter_end;
+    for (tie(eiter, eiter_end) = edges(g); eiter != eiter_end; ++eiter) {
+        if (std::find(spanning_tree.begin(), spanning_tree.end(), *eiter) != spanning_tree.end())
+            out.push_back(std::pair<int, int>(source(*eiter, g), target(*eiter, g)));
+    }
+
     return out;
 }
 
