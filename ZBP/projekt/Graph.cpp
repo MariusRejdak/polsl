@@ -1,6 +1,7 @@
 #include "Graph.h"
 
 #include <vector>
+#include <map>
 #include <climits>
 #include <iostream>
 #include <queue>
@@ -112,8 +113,7 @@ std::vector<int> Graph::bellman_ford(int start_vertex)
 			{
 				if(matrix[u][v] != -1)
 				{
-					if(((d[v] > d[u] + matrix[u][v]) && (d[v] != -1) && (d[u] != -1))
-						|| ((d[v] == -1) && (d[u] != -1)))
+					if((((d[v] == -1) && (d[u] != -1)) || ((d[v] != -1) && (d[u] != -1) && (d[v] > d[u] + matrix[u][v]))))
 					{
 						d[v] = d[u] + matrix[u][v];
 					}
@@ -216,7 +216,43 @@ std::vector<int> Graph::topological_sort()
 
 std::vector<std::pair<int, int> > Graph::kruskal()
 {
-	
+	std::vector<std::pair<int, int> > out;
+	auto Q_comp = [&](const std::pair<int,int> &lhs, const std::pair<int,int> &rhs) -> bool
+	{
+		return (matrix[lhs.first][lhs.second] > matrix[rhs.first][rhs.second]);
+	};
+	std::vector<std::pair<int, int> > Q;
+
+	for (size_t i = 0; i < m_size; ++i)
+		for (size_t j = i+1; j < m_size; ++j)
+			if(matrix[i][j] != -1)
+				Q.push_back(std::pair<int,int>(i,j));
+
+	std::make_heap(Q.begin(), Q.end(), Q_comp);
+
+	std::map<int,int> connected;
+	for (size_t i = 0; i < m_size; ++i)
+		connected[i] = i;
+
+	while(!Q.empty())
+	{
+		int u = Q.front().first, v = Q.front().second;
+		if(connected[u] != connected[v])
+		{
+			out.push_back(std::pair<int,int>(u, v));
+			int parent_old = connected[v]; 
+			for (size_t i = 0; i < m_size; ++i)
+			{
+				if(connected[i] == parent_old)
+					connected[i] = connected[u];
+			}
+		}
+
+		std::pop_heap(Q.begin(), Q.end(), Q_comp);
+		Q.pop_back();
+	}
+
+	return out;
 }
 
 void Graph::print(std::ostream& o)

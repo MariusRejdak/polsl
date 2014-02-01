@@ -68,7 +68,7 @@ BoostGraphWrapper::BoostGraphWrapper(int *matrix, size_t size) : g(size)
         tie(vj, vend) = vertices(g);
         for (size_t j = 0; j < size; ++j, ++vj)
         {
-            if(matrix[i*size+j] > 0)
+            if(i != j && matrix[i*size+j] != -1)
                 add_edge(*vi, *vj, matrix[i*size+j], g);
         }
     }
@@ -83,7 +83,7 @@ BoostGraphWrapper::BoostGraphWrapper(std::vector<std::vector<int> > &matrix) : g
         tie(vj, vend) = vertices(g);
         for (size_t j = 0; j < matrix[i].size(); ++j, ++vj)
         {
-            if(matrix[i][j] > 0)
+            if(i != j && matrix[i][j] != -1)
                 add_edge(*vi, *vj, matrix[i][j], g);
         }
     }
