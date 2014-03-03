@@ -13,11 +13,12 @@ Data wykonania ćwiczenia: 2013-11-27
 #include <string.h>
 #include <time.h>
 
+//Numeracja zakładów (!= numeracja procesów)
 #define ZAKLAD_A 0
 #define ZAKLAD_B 1
 #define ZAKLAD_C 2
 
-//Tags
+//Tagi
 #define END_PROGRAM 0
 #define MESSAGE 1
 #define PROBLEM_SOL 2
@@ -35,8 +36,10 @@ Data wykonania ćwiczenia: 2013-11-27
 #define ROZW_SPOR_PRAWN 1000
 #define ROZW_PROB_INFOR 100
 
+//Oznaczenie problemu
 enum Problem {NONE = 0, REKRUTACJA, SPOR_PRAWNY, INFORM};
 
+//Struktura do przesyłania informacji o każdym zakładzie
 struct ZakladInfo
 {
 	int typ;
@@ -45,6 +48,7 @@ struct ZakladInfo
 	bool problemInform;
 };
 
+//Strunktura do przesyłania opisu problemu
 struct Message
 {
 	int problemSource;
@@ -52,6 +56,7 @@ struct Message
 	enum Problem problemType;
 };
 
+//Generacji macierzy
 void getMatrix(int size, double **values)
 {
 	*values = malloc(size * size * sizeof(double));
@@ -62,6 +67,7 @@ void getMatrix(int size, double **values)
     }
 }
 
+//Zwraca wielkość macierzy do rozwiązania
 int getProblemSize(enum Problem p)
 {
 	switch(p)
@@ -81,6 +87,7 @@ int getProblemSize(enum Problem p)
 	}
 }
 
+//Generacja problemu
 enum Problem getProblem()
 {
 	unsigned int s = rand();
@@ -102,6 +109,7 @@ enum Problem getProblem()
 	}
 }
 
+//Rozwiązanie zadanego problemu
 double solveProblem(int size, double *values)
 {
 	double start_time = MPI_Wtime();
@@ -118,11 +126,13 @@ double solveProblem(int size, double *values)
     return MPI_Wtime()-start_time;
 }
 
+//Przekształca numer procesu na numer zakładu
 inline int zakladNr(int me)
 {
 	return (me-1) % 3;
 }
 
+//Dla numeru zakładu zwraca numer rozwiązywanego problemu
 enum Problem rozwiazuje(int zaklad)
 {
 	switch(zaklad)
@@ -141,6 +151,7 @@ enum Problem rozwiazuje(int zaklad)
 	}
 }
 
+//Zwraca numer zakładu który może rozwiązać zadany problem
 int hasProblem(enum Problem p, struct ZakladInfo *zaklady, int mpi_size)
 {
 	for(int i = 1; i < mpi_size; ++i)
@@ -165,35 +176,46 @@ int hasProblem(enum Problem p, struct ZakladInfo *zaklady, int mpi_size)
 	return 0;
 }
 
+//Główny proces zakładu
 void proces_zaklad(int me, int typ_zakladu, double *times)
 {
+	//Zapisywane łączne czasy wykonywanych operacji
 	double *timeWork = times+0, *timeProblems = times+1, *timeMyProblems = times+2, *timeWait = times+3;
+	//Czy ten zakład ma nierozwiązany problem
 	bool problemRekrutacja = false, problemSporPrawny = false, problemInform = false;
+	//Licznik rozwiązanych macierzy od klientów
 	int matrixes_solved = 0;
+	//Rodzaj rozwiązywanych problemów przez zakład
 	enum Problem rozwiazujeP = rozwiazuje(typ_zakladu);
 
+	//Maksymalna liczba rozwiązanych macierzy
 	while(matrixes_solved < 10000)
 	{
 		MPI_Status status, status_tmp;
 		int tag, source, flag = 0;
 
+		//Sprawdzenie czy istnieje oczekująca wiadomość
 		MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status);
-		if(flag)
+		if(flag) //Oczekująca wiadomość na odebranie
 		{
-			source = status.MPI_SOURCE;
-			tag = status.MPI_TAG;
-			if(tag == END_PROGRAM)
+			source = status.MPI_SOURCE; //Nadawca wiadomości
+			tag = status.MPI_TAG; //Tag wiadomości
+			if(tag == END_PROGRAM) //Oczekująca wiadomość to informacja o zakończeniu programu
 			{
+				//Opcjonalne, odebranie wiadomości o zakończeniu programu
 				MPI_Recv(0, 0, MPI_CHAR, source, tag, MPI_COMM_WORLD, &status_tmp);
 				return;
 			}
-			else if(tag == MESSAGE)
+			else if(tag == MESSAGE) //Oczekująca wiadomość to problem do rozwiązania
 			{
 				struct Message m;
+
+				//Odebranie wiadomości
 				MPI_Recv(&m, sizeof(struct Message), MPI_CHAR, source, tag, MPI_COMM_WORLD, &status_tmp);
 
-				if(m.problemType == NONE)
+				if(m.problemType == NONE) //Wiadomość to macierz do rozwiązania od klient
 				{
+					//Rozwiązanie macierzy od klienta
 					double *values = NULL;
 					int size = m.matrixSize;
 					getMatrix(size, &values);
@@ -202,6 +224,7 @@ void proces_zaklad(int me, int typ_zakladu, double *times)
 
 					matrixes_solved++;
 
+					//"Generacja" problemu
 					enum Problem p = getProblem();
 					switch(p)
 					{
@@ -218,7 +241,7 @@ void proces_zaklad(int me, int typ_zakladu, double *times)
 						break;
 					}
 
-					if(p != NONE)
+					if(p != NONE) //Wystąpił problem, powiadomienie procesu nadzorcy o oczekującym na rozwiązanie problemie
 					{
 						struct Message mx;
 						mx.matrixSize = getProblemSize(p);
@@ -228,20 +251,24 @@ void proces_zaklad(int me, int typ_zakladu, double *times)
 					}
 					
 				}
-				else if(m.problemType == rozwiazujeP)
+				else if(m.problemType == rozwiazujeP) //Wiadomość to problem który może rozwiązać ten zakłąd
 				{
+					//Rozwiązanie problemu
 					double *values = NULL;
 					int size = m.matrixSize;
 					getMatrix(size, &values);
 					*timeProblems += solveProblem(size, values);
 					free(values);
 
+					//Powiadomienie procesu nadzorcy o rozwiązaniu problemu
 					MPI_Send(&m, sizeof(struct Message), MPI_CHAR, 0, PROBLEM_SOL, MPI_COMM_WORLD);
+					//Powiadomienie "autora" problemu o rozwiązaniu problemu
 					MPI_Send(&m, sizeof(struct Message), MPI_CHAR, m.problemSource, PROBLEM_SOL, MPI_COMM_WORLD);
 				}
 			}
-			else if(tag == PROBLEM_SOL)
+			else if(tag == PROBLEM_SOL) //Oczekująca wiadomość to informacja o rozwiązaniu problemu
 			{
+				//Odebranie wiadomości
 				struct Message m;
 				MPI_Recv(&m, sizeof(struct Message), MPI_CHAR, source, tag, MPI_COMM_WORLD, &status_tmp);
 
@@ -261,7 +288,7 @@ void proces_zaklad(int me, int typ_zakladu, double *times)
 				}
 			}
 		}
-		else
+		else //Brak oczekującej wiadomości, żądanie otrzymania zadania do wykonania
 		{
 			struct Message m;
 			m.problemType = NONE;
@@ -269,13 +296,16 @@ void proces_zaklad(int me, int typ_zakladu, double *times)
 		}
 	}
 
+	//Powiadomienie procesu nadzorcy o zakończeniu programu
 	MPI_Send(0, 0, MPI_CHAR, 0, END_PROGRAM, MPI_COMM_WORLD);
 }
 
+//Główny proces klienta (nadzorcy)
 void proces_klient(int me, int mpi_size, int *send_matrixes)
 {
+	//Tablica przechowująca informacje o zakładach
 	struct ZakladInfo zaklady[mpi_size];
-
+	//Inicjalizacja w/w tablicy
 	for(int i = 1; i < mpi_size; ++i)
 	{
 		zaklady[i].typ = zakladNr(i);
@@ -289,12 +319,15 @@ void proces_klient(int me, int mpi_size, int *send_matrixes)
 		MPI_Status status, status_tmp;
 		int source, tag;
 
+		//Czekanie na nową oczekującą wiadomość
 		MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-		source = status.MPI_SOURCE;
-		tag = status.MPI_TAG;
-		if(tag == END_PROGRAM)
+		source = status.MPI_SOURCE; //Nadawca wiadomości
+		tag = status.MPI_TAG; //Tag wiadomości
+		if(tag == END_PROGRAM) //Zakończenie programu
 		{
+			//Odebranie wiadomości
 			MPI_Recv(0, 0, MPI_CHAR, source, tag, MPI_COMM_WORLD, &status_tmp);
+			//Powiadomienie pozostałych procesów o zakończeniu programu
 			for(int i = 1; i < mpi_size; ++i)
 			{
 				if(i != source)
@@ -303,6 +336,8 @@ void proces_klient(int me, int mpi_size, int *send_matrixes)
 				}
 			}
 
+			//Informacja o zakończeniu programu może dojść do zakładów w momencie kiedy będą zablokowane
+			//na operacji wysyłania, należy ich wiadomości odebrać aby mogły się normalnie zakończyć
 			int flag = 0;
 			do
 			{
@@ -318,11 +353,13 @@ void proces_klient(int me, int mpi_size, int *send_matrixes)
 		}
 		else if(tag == MESSAGE)
 		{
+			//Odebranie wiadomości
 			struct Message m;
 			MPI_Recv(&m, sizeof(struct Message), MPI_CHAR, source, tag, MPI_COMM_WORLD, &status_tmp);
 
-			if(m.problemType == NONE)
+			if(m.problemType == NONE) //Zakład wysłał rządanie problemu do rozwiązania
 			{
+				//Sprawdzenie czy oczekuje jakiś problem oczekujący na rozwiązanie dla tego zakładu
 				enum Problem p = rozwiazuje(zakladNr(source));
 				int todoProblem = hasProblem(p, zaklady, mpi_size);
 
@@ -332,17 +369,20 @@ void proces_klient(int me, int mpi_size, int *send_matrixes)
 					m.problemType = p;
 					m.matrixSize = getProblemSize(p);
 				}
-				else
+				else //Wygenerowanie macierzy "od klienta"
 				{
 					m.problemSource = 0;
 					m.problemType = NONE;
 					m.matrixSize = getProblemSize(NONE);
 				}
 
+				//Wysłanie wiadomości
 				MPI_Send(&m, sizeof(struct Message), MPI_CHAR, source, MESSAGE, MPI_COMM_WORLD);
+
+				//Zliczanie wysłanych macierzy
 				(*send_matrixes)++;
 			}
-			else
+			else //Zakład zgłosił wystąpienie problemu
 			{
 				switch(m.problemType)
 				{
@@ -360,7 +400,7 @@ void proces_klient(int me, int mpi_size, int *send_matrixes)
 				}
 			}
 		}
-		else if(tag == PROBLEM_SOL)
+		else if(tag == PROBLEM_SOL) //Zakład zgłosił rozwiązanie problemu
 		{
 			struct Message m;
 			MPI_Recv(&m, sizeof(struct Message), MPI_CHAR, source, tag, MPI_COMM_WORLD, &status_tmp);
@@ -389,12 +429,16 @@ int main(int argc, char *argv[])
 	double times[4] = {0.};
 	int send_matrixes = 0;
 
+	//Inicjalizacja OpenMPI
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &me);
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-	srand(time(0)+me); //so random
+	//Na jednym komputerze wszystkie procesy dochodzą do tego momentu jednocześnie
+	//+me gwarantuje różne ziarna generatora liczb pseudolowych we wszystkich procesach
+	srand(time(0)+me);
 
+	//Wypisanie danych wynikowych
 	if(me != 0)
 	{
 		proces_zaklad(me, zakladNr(me), times);
@@ -406,5 +450,6 @@ int main(int argc, char *argv[])
 		printf("Klient: wysłano %d macierzy\n", send_matrixes);
 	}
 
+	//Zwolnienie zasobów OpenMPI
 	MPI_Finalize();
 }  

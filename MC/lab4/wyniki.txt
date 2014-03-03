@@ -1,0 +1,118 @@
+dla 0
+Packet buffer statistics:
+Mean number of packets in the buffer: 29.5468
+Number of lost packets: 2
+Number of lost tokens: 0
+Total number of packets in the input stream: 532
+Total number of packets in the output stream: 530
+Average output stream intensity: 0.883333
+Total time of experiment:   600
+
+
+dla 50
+Packet buffer statistics:
+Mean number of packets in the buffer: 7.34913
+Number of lost packets: 0
+Number of lost tokens: 18
+Total number of packets in the input stream: 532
+Total number of packets in the output stream: 532
+Average output stream intensity: 0.886667
+Total time of experiment:   600
+
+dla 100
+Packet buffer statistics:
+Mean number of packets in the buffer: 0.0190547
+Number of lost packets: 0
+Number of lost tokens: 68
+Total number of packets in the input stream: 532
+Total number of packets in the output stream: 532
+Average output stream intensity: 0.886667
+Total time of experiment:   600
+
+
+
+void Buffer::handleMessage(cMessage *msg)
+{
+	// reagowaæ na: nadejœcie pakietu, nadejœcie ¿etonu 
+    if (msg->arrivedOn("inP")) // przybycie pakietu
+    {
+		// jeœli bufor pakietów jet pe³ny, to pakiet jest tracony
+		// jeœli bufor pakietów nie jest ani pusty, ani pe³ny, to pakiet wchodzi do bufora
+		// jeœli bufor pakietów jest pusty, to:
+		//       jeœli bufor ¿etonów jest pusty, to pakiet wchodzi do bufora
+		//       jeœli bufor ¿etonów nie jest pusty, to pakiet wchodzi do sieci zabieraj¹c ¿eton
+
+		// do wype³nienia
+    	collectContinuous();
+    	cntTotIn++;
+    	vectorPIn.record(cntTotIn);
+
+    	if (b == B)	{
+    		delete msg;
+    		lostPackets++; //utracono pakiet
+    	}
+    	else if (b != 0){
+    		b++; //dodano do bufora
+    		vectorBP.record(b);
+    		delete msg;
+    	}
+    	else {
+    		if(m == 0) {
+    			b++; //dodanie do bufora
+    			vectorBP.record(b);
+    			delete msg;
+    		}
+    		else {
+    			m--; //pobranie zetonu
+    			vectorBT.record(m);
+    			cntTotOut++; //wyjscie pakietu
+    			vectorPOut.record(cntTotOut);
+    			send(msg, "out");
+    		}
+    	}
+	}
+	else if (msg->arrivedOn("inT")) // przybycie ¿etonu
+	{
+		// jeœli bufor ¿etonów jet pe³ny, to ¿eton jest tracony
+		// jeœli bufor ¿etonów nie jest ani pusty, ani pe³ny, to ¿eton wchodzi do bufora
+		// jeœli bufor ¿etonów jest pusty, to:
+		//       jeœli bufor pakietów jest pusty, to ¿eton wchodzi do bufora
+		//       jeœli bufor pakietów nie jest pusty, to pakiet wchodzi do sieci zabieraj¹c ¿eton
+
+		// do wype³nienia
+		collectContinuous();
+		if (m == M) {
+			delete msg;
+			lostTokens++; //utracono ¿eton
+		}
+		else if (m != 0) {
+			m++; //dodano ¿eton do bufora
+			vectorBT.record(m);
+			delete msg;
+		}
+		else {
+			if(b == 0) {
+				m++;
+				vectorBT.record(m);
+				delete msg;
+			}
+			else {
+				b--;
+				vectorBP.record(b);
+				cntTotOut++; //wyjscie pakietu
+				vectorPOut.record(cntTotOut);
+				send(msg, "out");
+			}
+		}
+
+	}
+	else if (msg->isSelfMessage()) // pomiar intensywnoœci strumieni: wejœciowego i wyjœciowego
+	{
+		i++;
+		scheduleAt(simTime()+interval, sendMessageEvent);
+		vectorInStream.record((cntTotIn-cntTotIn0)/(interval));
+		cntTotIn0 = cntTotIn;
+		vectorOutStream.record((cntTotOut-cntTotOut0)/(interval));
+		cntTotOut0 = cntTotOut;
+	}
+}
