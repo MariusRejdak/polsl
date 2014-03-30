@@ -27,7 +27,6 @@
 #include <unistd.h>
 #include <fuse.h>
 
-#include "arc4.h"
 
 char *rw_path;
 
@@ -127,30 +126,10 @@ static int rw_open(const char *path, struct fuse_file_info *finfo)
     return 0;
 }
 
-
-//Key for rc4
-//md5sum rwfs.tgz
-unsigned char mykey[] = {0x97, 0x77, 0x5b, 0xca, 0x6d, 0xd8, 0x1e, 0xe3, 0xac, 0xbb, 0x92, 0x5b, 0xa3, 0x42, 0x3f, 0x5c};
-
-void encrypt(unsigned char *rc4_key, const char* src, char* dest, size_t offset, size_t length)
-{
-    ArcfourContext ctx;
-    size_t i;
-
-    arcfour_init(&ctx, rc4_key, 16); //128bit key
-  
-    for (i = 0; i < offset; ++i)
-        arcfour_byte(&ctx);
-
-    for (i = 0; i < length; ++i)
-        dest[i] = src[i] ^ arcfour_byte(&ctx);
-}
-
 static int rw_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *finfo)
 {
     int fd;
     int res;
-    char* cipher;
 
 	char *lpath=translate_path(path);
     fd = open(lpath, O_RDONLY);
@@ -158,13 +137,8 @@ static int rw_read(const char *path, char *buf, size_t size, off_t offset, struc
     if(fd == -1) {
         res = -errno;
         return res;
-    }
-
-    cipher = malloc(sizeof(unsigned char)*size);
-    res = pread(fd, cipher, size, offset);
-    encrypt(mykey, cipher, buf, offset, size);
-    //res = pread(fd, buf, size, offset);
-    free(cipher);
+    } 
+    res = pread(fd, buf, size, offset);
     
     if(res == -1) {
         res = -errno;
@@ -177,7 +151,6 @@ static int rw_write(const char *path, const char *buf, size_t size, off_t offset
 {
 	int fd;
     int res = 0;
-    char* cipher;
 
 	char *lpath=translate_path(path);
     fd = open(lpath, O_WRONLY);
@@ -185,13 +158,8 @@ static int rw_write(const char *path, const char *buf, size_t size, off_t offset
     if(fd == -1) {
         res = -errno;
         return res;
-    }
-
-    cipher = malloc(sizeof(unsigned char)*size);
-    encrypt(mykey, buf, cipher, offset, size);
-    res = pwrite(fd, cipher, size, offset);
-    //res = pwrite(fd, buf, size, offset);
-    free(cipher);
+    } 
+    res = pwrite(fd, buf, size, offset);
     
     if(res == -1) {
         res = -errno;
