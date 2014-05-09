@@ -1,0 +1,28 @@
+#!/usr/bin/env perl
+
+# Marius Rejdak
+# OS1
+#
+# Gliwice 13.03.2014
+# MiNWO Lab1 Perl
+
+use strict;
+use warnings;
+
+my @files = <PSSM/PSSM-*>;
+
+foreach(@files) {
+	if(/PSSM-(.*)/) {
+		print ">" . $1 . "\n";
+	}
+
+	open(my $in, "<", $_) or die "Cannot open ".$_."\n";
+
+	while(<$in>) {
+		if(/^\s+[0-9]+ ([ARNDCQEGHILKMFPSTWYV])/) {
+			print $1;
+		}
+	}
+	print "\n";
+	close($in);
+}

@@ -21,9 +21,22 @@
    * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    */
   
-   #include "arc4.h"
+  
+  typedef struct
+  {
+	unsigned int x;
+	unsigned int y;
+	unsigned char state[256];
+  } ArcfourContext;
+	   
+  void arcfour_init(ArcfourContext *ctx, const unsigned char *key, 
+					unsigned int key_len);
+  unsigned int arcfour_byte(ArcfourContext *ctx);
+  void arcfour_encrypt(ArcfourContext *ctx, unsigned char *dest, 
+					   const unsigned char *src, unsigned int len);
+  
    
-  /*int main(int argc, char **argv)
+  int main(int argc, char **argv)
   {
 	unsigned char dest[500];
 	unsigned char mykey[] = {0x29, 0x04, 0x19, 0x72, 0xfb, 0x42,
@@ -33,18 +46,18 @@
   
 	ArcfourContext mycontext;
 	   
-	// Initialize the algoritm
+	/* Initialize the algoritm */
 	arcfour_init(&mycontext, mykey, 16);
   
-	// Encrypt 13 bytes of the src string
+	/* Encrypt 13 bytes of the src string */
   
 	arcfour_encrypt(&mycontext, dest, src, 13);
 	   
-	// Now "dest" contains the encrypted string. Do whatever
-	// you please with it...
+	/* Now "dest" contains the encrypted string. Do whatever
+	   you please with it... */
 		 
 	return 0;
-  }*/
+  }
 			
   
   void arcfour_init(ArcfourContext *ctx, const unsigned char *key, 
