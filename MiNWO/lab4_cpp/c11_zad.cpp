@@ -63,7 +63,6 @@ struct osoba
 	friend ostream& operator<<(ostream &os, const osoba& cro){return os<<endl<<cro.imie<<' '<<cro.nazwisko<<' '<<cro.wiek;}
 };
 
-
 class schowek
 {
 	info *ptr; // gdy ==nullptr, to schowek jest pusty
@@ -75,11 +74,39 @@ public:
 
 	//TODO
 
-	//schowek(const schowek &crs);
-	//schowek(schowek &&rrs);
-	//schowek& operator=(const schowek &crs);
-	//schowek& operator=(schowek &&rrs);
+	schowek(const schowek &crs) : ptr(new info(*crs.ptr))
+	{
+		cout << "\nschowek::schowek(const &)";
+	}
+
+	schowek(schowek &&rrs)
+	{
+		cout << "\nschowek::schowek(&&)";
+		ptr = rrs.ptr;
+		rrs.ptr = 0;
+	}
+
+	schowek& operator=(const schowek &crs)
+	{
+		ptr = new info(*crs.ptr);
+		cout << "\nschowek::operator=(const &)";
+		return *this;
+	}
+
+	schowek& operator=(schowek &&rrs)
+	{
+		ptr = rrs.ptr;
+		rrs.ptr = 0;
+		cout << "\nschowek::operator=(&&)";
+		return *this;
+	}
 };
+
+schowek return_schowek(info &i)
+{
+	schowek s(i);
+	return s;
+}
 
 
 void zad1()
@@ -91,20 +118,42 @@ void zad1()
 
 	cout<<"\n\n zamiana s1-s2 z move(), przed "<<si1<<si2<<si3;
 
+	//metody przenoszące
 	si3=move(si2);
 	si2=move(si1);
 	si1=move(si3);
 
 	cout<<"\n\n zamiana s1-s2 bez move(), przed "<<si1<<si2<<si3;
 
+	//metody zwykłe
 	si3=si2;
 	si2=si1;
 	si1=si3;
 
 	cout<<"\n\n po zamianie "<<si1<<si2<<si3;
 
-	// TODO
+	//w obydwu poniższych przypadkach wywoływana jest metoda przenosząca
+	cout<<"\n\n zwrócone z funkcji: ";
+	si1=move(return_schowek(i1));
+	cout<<si1;
+	si1=return_schowek(i1);
+	cout<<si1;
 
+	//metoda zwykła
+	cout<<"\n\n si4:";
+	schowek si4(si1);
+	cout<<si4;
+
+	//metoda przenosząca
+	cout<<"\n\n si5:";
+	schowek	si5(move(si4));
+	cout<<si5;
+
+	//Zakomentowanie metod przenoszących powoduje automatyczne użycie zwykłych metod bez błędów czy ostrzeżeń
+	// GCC 4.9.0
+	// Linux 3.14.2-1-ARCH x86_64 GNU/Linux
+
+	//Metody przenoszące zdecydowanie mogą poprawić wydajność kodu gdy umiejętnie używający ich programista uniknie zbędnej alokacji i dealokacji pamięci, a kod pozostaje czytelny bo operuje na wartościach a nie wskaźnikach.
 }
 
 
@@ -123,7 +172,7 @@ void zad2()
 
 	// od tąd bez iteratorow (deklarowanych jawnie ani auto), bez for, z algorytmami i funkcjami lambda
 
-	//GCC wymaga vector dla stable_sort
+	//GCC wymaga vector dla stable_sort (random access iterators, not bidirectional iterators)
 	vector<osoba> los_sorted(los.begin(), los.end());
 
 	cout<<"\n\n Sortowanie wg wieku...";
